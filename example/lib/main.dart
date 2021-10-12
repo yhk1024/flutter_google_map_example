@@ -95,7 +95,8 @@ class _MainPageState extends State<MainPage> {
             context,
             MaterialPageRoute(
               builder: (context) => Acourse(),
-            ));
+            )
+        );
     }
   }
 }
