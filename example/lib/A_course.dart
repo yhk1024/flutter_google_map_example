@@ -6,6 +6,7 @@
 
 import 'package:flutter/material.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
+import 'package:geolocator/geolocator.dart';
 
 import 'Acourse_polyline.dart';
 
@@ -89,6 +90,8 @@ class AcourseState extends State<Acourse> {
             child: Center(
               child: GoogleMap(
                 onMapCreated: _onMapCreated,
+                myLocationEnabled: true,
+                myLocationButtonEnabled: true,
                 markers: Set.from(_markers),
                 polylines: Set.from(_polyline),
                 initialCameraPosition: const CameraPosition(

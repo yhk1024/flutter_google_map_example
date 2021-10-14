@@ -13,7 +13,7 @@ dependencies:
     sdk: flutter
 
   google_maps_flutter: ^2.0.11
-
+  geolocator: ^7.7.0
 
   cheongsuri_test:
     # When depending on this package from a real application you should use:

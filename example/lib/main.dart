@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:cheongsuri_test_example/A_course.dart';
 import 'package:cheongsuri_test_example/B_course.dart';
 import 'package:cheongsuri_test_example/C_course.dart';
-// import 'package:cheongsuri_test_example/QR_camera.dart';
+
 
 void main() {
   runApp(MyApp());
@@ -94,7 +94,7 @@ class _MainPageState extends State<MainPage> {
         Navigator.push(
             context,
             MaterialPageRoute(
-              builder: (context) => Acourse(),
+              builder: (context) => Ccourse(),
             )
         );
     }
