@@ -1,157 +1,192 @@
-/*
+// Copyright 2013 The Flutter Authors. All rights reserved.
+// Use of this source code is governed by a BSD-style license that can be
+// found in the LICENSE file.
 
-import 'dart:async';
+// ignore_for_file: public_member_api_docs
 
 import 'package:flutter/material.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
+import 'package:geolocator/geolocator.dart';
+import 'package:flutter_background_geolocation/flutter_background_geolocation.dart' as bg;
 
-class Acourse extends StatefulWidget {
+class Bcourse extends StatefulWidget {
   @override
-  _AcourseState createState() => _AcourseState();
+  BcourseState createState() => BcourseState();
 }
 
-class _AcourseState extends State<Acourse> {
+class BcourseState extends State<Bcourse> {
+  GoogleMapController? controller;
+  Map<PolylineId, Polyline> polylines = <PolylineId, Polyline>{};
 
-  Completer<NaverMapController> _controller = Completer();
+  void _onMapCreated(GoogleMapController controller) {
+    this.controller = controller;
+  }
+
+  late String currentLocation;
+  // 위치 사용 권환 확인
+  Future <void> _getCurrentLocation() async {
+    LocationPermission permission;
+
+    permission = await Geolocator.checkPermission();
+    if (permission == LocationPermission.denied) {
+      // 위치 사용 권한 부여 요청
+      permission = await Geolocator.requestPermission();
+      if (permission == LocationPermission.denied) {
+        // 수동으로 권한을 거부하면 'currentLocation'에 권한 거부 값을 할당
+        setState(() {
+          currentLocation ="Permission Denied";
+        });
+      }else{
+        // 현재 위치 값을 가져와 positoin 변수에 할당
+        var position = await Geolocator.getCurrentPosition(desiredAccuracy: LocationAccuracy.high);
+        setState(() {
+          currentLocation ="latitude: ${position.latitude}" + " , " + "Logitude: ${position.longitude}";
+        });
+      }
+    }else{
+      var position = await Geolocator.getCurrentPosition(desiredAccuracy: LocationAccuracy.high);
+      setState(() {
+        currentLocation ="latitude: ${position.latitude}" + " , " + "Logitude: ${position.longitude}";
+      });
+    }
+  }
+
   List<Marker> _markers = [];
-  // 마커 좌표
-  List<dynamic> _location = [
-    LatLng(33.301577, 126.260575),  // A01
-    LatLng(33.301323, 126.260833),  // A02
-    LatLng(33.301658, 126.261576),  // A03
-    LatLng(33.302793, 126.262634),  // A04
-    LatLng(33.302323, 126.263532),  // A05
-    LatLng(33.304719, 126.263798),  // A06
-    LatLng(33.304451, 126.264617),  // A07
-    LatLng(33.301953, 126.266909),  // A08
-    LatLng(33.300029, 126.268030),  // AB01
-    LatLng(33.298572, 126.266630),  // AB02
-    LatLng(33.300711, 126.265126),  // ABC01
-    LatLng(33.3020835, 126.26376340000003),  // ABC02
-    LatLng(33.301645, 126.261553),  // ABC03
-    LatLng(33.301701, 126.260317),  // ABC04
-  ];
-  // 마커 텍스트
-  List<String> _list = [
-    ('A01'), ('A02'), ('A03'), ('A04'), ('A05'), ('A06'), ('A07'), ('A08'), ('AB01'), ('AB02'), ('ABC01'), ('ABC02'), ('ABC03'), ('ABC04')
-  ];
+  List<Polyline> _polyline = [];
+  List<Circle> _circle = [];
+  List<LatLng> _locations = [
+    LatLng(33.301545, 126.260609),  // S01 입구
+    LatLng(33.301310, 126.260811),  // ABC01 삼거리
+    LatLng(33.301622, 126.261615),  // ABC02 우측 갈림길, 숨골
+    LatLng(33.302137, 126.263790),  // ABC03 고릅써
+    LatLng(33.300696, 126.265148),  // ABC04 AB코스 갈림길, 곶자왈의 동물
+    LatLng(33.298536, 126.266667),  // AB01 갈림길 좌측
+    LatLng(33.300089, 126.268161),  // AB02 A코스 갈림길, 반딧불이
+    LatLng(33.301934, 126.266904),  // A01 힐링길 백서향 반딧불인형 2개
+    LatLng(33.304484, 126.264612),  // AB03 AB코스 합류, 물통과 목장
+    LatLng(33.304719, 126.263791),  // AB04 경사로 바로 앞, 숨골
+    LatLng(33.302267, 126.263503),  // AB05 옵데강 우측
+    LatLng(33.302795, 126.262610),  // AB06 좌측
+    LatLng(33.301651, 126.261710),  // AB07 ABC02 합류점, Y자
+    LatLng(33.301339, 126.260856),  // ABC05 출구방향
+    LatLng(33.301541, 126.260621), ];  // E01 종료
+  List<dynamic> _list = [
+    ('S01'), ('ABC01'), ('ABC02'), ('ABC03'), ('ABC04'), ('AB01'), ('AB02'), ('A01'),
+    ('AB03'), ('AB04'), ('AB05'), ('AB06'), ('AB07'), ('ABC05'), ('E01') ];
 
-  // 경로 좌표
-  List<LatLng> _coordinates = [
-    LatLng(33.3021592, 126.2589828),
-    LatLng(33.301577, 126.260575),  // A01
-    LatLng(33.3013391, 126.260821),
-    LatLng(33.301323, 126.260833),  // A02
-    LatLng(33.3016392, 126.2614269),
-    LatLng(33.301658, 126.261576),  // A03
-    LatLng(33.301644599999996, 126.26160559999998),
-    LatLng(33.302495099999994, 126.26253709999997),
-    LatLng(33.302793, 126.262634),  // A04
-    LatLng(33.302323, 126.263532),  // A05
-    LatLng(33.303114099999995, 126.26375709999999),
-    LatLng(33.3034478, 126.2635436),
-    LatLng(33.30394589999999, 126.26347387777778),
-    LatLng(33.304066, 126.26344019999999),
-    LatLng(33.3042375, 126.26343769999998),
-    LatLng(33.304719, 126.263798),  // A06
-    LatLng(33.304451, 126.264617),  // A07
-    // LatLng(33.289244088888886, 126.2673215),
-    LatLng(33.3036797, 126.26520077777775),
-    LatLng(33.3033661, 126.26583110000001),
-    LatLng(33.3023914, 126.2665054),
-    LatLng(33.3018363, 126.2666807),
-    LatLng(33.301953, 126.266909),  // A08
-    LatLng(33.3000992, 126.26818250000002),
-    LatLng(33.30006100000001, 126.26815619999998),
-    LatLng(33.300029, 126.268030),  // AB01
-    LatLng(33.298572, 126.266630),  // AB02
-    // LatLng(33.3007376, 126.26517159999999),
-    LatLng(33.300711, 126.265126),  // ABC01
-    LatLng(33.3020835, 126.26376340000003),  // ABC02
-    LatLng(33.301645, 126.261553),  // ABC03
-    LatLng(33.301329599999995, 126.26087720000001),
-    LatLng(33.301701, 126.260317),  // ABC04
-  ];
-
-  int _width = 5;
 
   @override
-  // 위에 적은 위치에 마커를 찍음.
   void initState() {
-    _location.forEach((point) {
-      _markers.add(Marker(
-        markerId: point.json.toString(),
-        position: point,
-        alpha: 0.7,
-        width: 20,
-        height: 27,
-        onMarkerTab: _onMarkerTap,
-      ));
-    });
+    for(int i=0; i < _locations.length; i++) {
+      // 마커 생성 코드
+      _markers.add(
+          Marker(
+            markerId: MarkerId('marker' + i.toString()),
+            draggable: false,
+            // 마커를 클릭하면 _list 리스트에 작성한 텍스트 표시
+            infoWindow: InfoWindow(
+                title: _list[i]
+            ),
+            position: _locations[i],
+          )
+      );
+      // 원 형태의 영역 생성 코드
+      _circle.add(
+          Circle(
+            circleId: CircleId('circle' + i.toString()),
+            center: _locations[i],  // 원 중심 위치
+            radius: 10, // 미터 단위의 원 반지름
+            strokeWidth: 1, // 원 테두리 두께
+            fillColor: Color.fromRGBO(171, 39, 133, 0.1), // 원 내부의 색
+          )
+      );
+    }
+    // 경로 그리기 코드
+    _polyline.add(
+        Polyline(
+          polylineId: PolylineId('polyline'),
+          width: 4, // 선의 두께
+          color: Colors.blue, // 선의 색
+          points: _createPoints(),  // 좌표
+        )
+    );
+    _getCurrentLocation();  // 위치 사용 권한 확인
+    _addGeofeence();  // 지오펜싱 추가 실행
+    bg.BackgroundGeolocation.onGeofence(_onGeofence); // 지오펜싱 이벤트 실행
+
     super.initState();
   }
 
-  // 실제로 화면에 지도를 보여줌
-  @override
-  Widget build(BuildContext context) {
-    return SafeArea(
-      child: Scaffold(
-        body: Column(
-          children: <Widget>[
-            _naverMap(),
-          ],
-        ),
-      ),
-    );
+  // 지오펜싱 추가
+  void _addGeofeence() {
+    for(int i=0; i < _locations.length; i++) {
+      double bgY = _locations[i].latitude;
+      double bgX = _locations[i].longitude;
+
+      bg.BackgroundGeolocation.addGeofence(bg.Geofence(
+        identifier: 'bg' + i.toString(),
+        radius: 10,
+        latitude: bgY,  // 지오펜싱 중심 Y좌표
+        longitude: bgX, // 지오펜싱 중심 X좌표
+      ));
+    }
+  }
+  void _onGeofence(bg.GeofenceEvent event) {
+    print('_onGeofence');
   }
 
-  // Follow : 위치추적을 활성화하고 현재 위치 오버레이와 카메라 좌표가 사용자의 위치를 따라 이동.
-  LocationTrackingMode _trackingMode = LocationTrackingMode.Follow;
 
-  // 화면에 보여주는 지도
-  _naverMap() {
-    return Expanded(
-      child: Stack(
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(title: const Text('C course'),),
+      body: Column(
+        // child widget 사이의 여유 공간을 모두 균등하게 배분
+        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+        // 좌우를 꽉 차게 배치
+        crossAxisAlignment: CrossAxisAlignment.stretch,
         children: <Widget>[
-          NaverMap(
-            onMapCreated: _onMapCreated,
-            initLocationTrackingMode: _trackingMode,
-            locationButtonEnable: true,
-            markers: _markers,
-            // 경로를 그림.
-            pathOverlays: {
-              PathOverlay(
-                PathOverlayId('path'),
-                _coordinates,
-                width: _width,
-                color: Colors.red,
-                outlineColor: Colors.white,
-              )
-            },
+          Expanded(
+            child: Center(
+              child: GoogleMap(
+                onMapCreated: _onMapCreated,
+                myLocationEnabled: true,
+                myLocationButtonEnabled: true,
+                markers: Set.from(_markers),  // 구글맵에 마커 표시
+                polylines: Set.from(_polyline), // 구글맵에 경로 표시
+                circles: Set.from(_circle), // 구글맵에 원(영역) 표시
+                initialCameraPosition: const CameraPosition(
+                  target: LatLng(33.301577, 126.260575),  // 처음 들어왔을 때 보여줄 위치
+                  zoom: 17.0, // 위치를 얼마나 확대해서 보여줄 것인가
+                ),
+              ),
+            ),
           ),
         ],
       ),
     );
   }
 
-  // ================== method ==========================
+  // 경로 그리기 위한 좌표
+  List<LatLng> _createPoints() {
+    final List<LatLng> points = <LatLng>[];
 
-  // 화면에 오면 처음부터 자동으로 경로 그린 위치를 보여줌
-  void _onMapCreated(NaverMapController controller) {
-    _controller.complete(controller);
-    controller.moveCamera(CameraUpdate.fitBounds(
-      LatLngBounds.fromLatLngList(_coordinates),
-      padding: 48,
-    ));
+    points.add(LatLng(33.301545, 126.260609));  // S01 입구
+    points.add(LatLng(33.301310, 126.260811));  // ABC01 삼거리
+    points.add(LatLng(33.301622, 126.261615));  // ABC02 우측 갈림길, 숨골
+    points.add(LatLng(33.302137, 126.263790));  // ABC03 고릅써
+    points.add(LatLng(33.300696, 126.265148));  // ABC04 AB코스 갈림길, 곶자왈의 동물
+    points.add(LatLng(33.298536, 126.266667));  // AB01 갈림길 좌측
+    points.add(LatLng(33.300089, 126.268161));  // AB02 A코스 갈림길, 반딧불이
+    points.add(LatLng(33.301934, 126.266904));  // A01 힐링길 백서향 반딧불인형 2개
+    points.add(LatLng(33.304484, 126.264612));  // AB03 AB코스 합류, 물통과 목장
+    points.add(LatLng(33.304719, 126.263791));  // AB04 경사로 바로 앞, 숨골
+    points.add(LatLng(33.302267, 126.263503));  // AB05 옵데강 우측
+    points.add(LatLng(33.302795, 126.262610));  // AB06 좌측
+    points.add(LatLng(33.301651, 126.261710));  // AB07 ABC02 합류점, Y자
+    points.add(LatLng(33.301339, 126.260856));  // ABC05 출구방향
+    points.add(LatLng(33.301541, 126.260621));  // E01 종료
+
+    return points;
   }
-
-  // 경로 마크를 클릭하면 몇 번인지 보여줌
-  void _onMarkerTap(Marker marker, Map<String, int> iconSize) {
-    int pos = _markers.indexWhere((m) => m.markerId == marker.markerId);
-    setState(() {
-      _markers[pos].infoWindow = _list[pos];
-    });
-  }
-
 }
-*/

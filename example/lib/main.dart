@@ -87,7 +87,7 @@ class _MainPageState extends State<MainPage> {
         Navigator.push(
             context,
             MaterialPageRoute(
-              builder: (context) => Acourse(),
+              builder: (context) => Bcourse(),
             ));
         break;
       case 2:

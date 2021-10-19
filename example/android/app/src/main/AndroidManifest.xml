@@ -1,17 +1,30 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
     package="com.example.csr_test_example">
 
     <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION"/>
     <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION"/>
-    <!--  Android10부터 앱이 백그라운드ㅔ서 실햏 쥘 때도 계속 업데이트 수신 권한  -->
+    <!--  Android10부터 앱이 백그라운드에서 실행 할 때도 계속 업데이트 수신 권한  -->
     <uses-permission android:name="android.permission.ACCESS_BACKGROUND_LOCATION"/>
 
     <uses-permission android:name="android.permission.WAKE_LOCK"/>
 
    <application
+       tools:replace="android:label"
        android:name="io.flutter.app.FlutterApplication"
        android:label="csr_test_example"
-       android:icon="@mipmap/ic_launcher">
+       android:icon="@mipmap/ic_launcher"
+       android:allowBackup="true">
+
+       <!--  지오펜싱 백그라운드 서비스 등록   -->
+       <receiver
+           android:name="io.flutter.plugins.geofencing.GeofencingBroadcastReceiver"
+           android:enabled="true"
+           android:exported="true"/>
+       <service
+           android:name="io.flutter.plugins.geofencing.GeofencingService"
+           android:permission="android.permission.BIND_JOB_SERVICE"
+           android:exported="true"/>
 
        <meta-data
            android:name="com.google.android.geo.API_KEY"
